@@ -1,35 +1,50 @@
 #!/usr/bin/python3
-"""
-Fabric script based on the file 1-pack_web_static.py that distributes an
-archive to the web servers
+"""This script contains the function do_deploy
+that distributes an archive to our web servers
 """
 
-from fabric.api import env, put, run
-from os.path import exists
+from fabric.api import put, run, env
+import os
 
-env.hosts = ['54.87.210.50', '54.82.137.30']
+
+env.username = "ubuntu"
+env.hosts = ["100.26.235.45", "100.25.222.11"]
+
 
 def do_deploy(archive_path):
-    if not exists(archive_path):
+    """This function distributes an archive
+    to my webservers"""
+
+    if not os.path.exists(archive_path):
         return False
 
-    try:
-        # Upload the archive to the /tmp/ directory of the web server
-        put(archive_path, "/tmp/")
-        # Get the file name without extension
-        file_name = archive_path.split("/")[-1]
-        name = file_name.split(".")[0]
-        # Uncompress the archive to the folder on the web server
-        run("mkdir -p /data/web_static/releases/{}/".format(name))
-        run("tar -xzf /tmp/{} -C /data/web_static/releases/{}/".format(file_name, name))
-        # Delete the archive from the web server
-        run("rm /tmp/{}".format(file_name))
-        run("mv /data/web_static/releases/{}/web_static/* /data/web_static/releases/{}/".format(name, name))
-        run("rm -rf /data/web_static/releases/{}/web_static".format(name))
-        # Delete the symbolic link from the web server
-        run("rm -rf /data/web_static/current")
-        # Create a new the symbolic link on the web server
-        run("ln -s /data/web_static/releases/{}/ /data/web_static/current".format(name))
-        return True
-    except:
+    if put("{}".format(archive_path), "/tmp/").failed:
         return False
+
+    archive = archive_path.split("/")
+    archive_w_exten = archive[1]
+    archive_wout_exten = archive[1][:-4]
+
+    if run(f"mkdir -p /data/web_static/releases/{archive_wout_exten}/").failed:
+        return False
+
+    if run(f"""tar -xzf /tmp/{archive_w_exten} -C /data/web_static/releases/{archive_wout_exten}/""").failed:
+        return False
+
+    if run(f"rm /tmp/{archive_w_exten}").failed:
+        return False
+
+    if run(f"""mv /data/web_static/releases/{archive_wout_exten}/web_static/* /data/web_static/releases/{archive_wout_exten}/""").failed:
+        return False
+
+    if run(f"rm -rf /data/web_static/releases/{archive_wout_exten}/web_static/").failed:
+        return False
+
+    if run(f"rm -rf /data/web_static/current").failed:
+        return False
+
+    if run(f"ln -s /data/web_static/releases/{archive_wout_exten}/ /data/web_static/current").failed:
+        return False
+
+    print("New version deployed!")
+    return True
