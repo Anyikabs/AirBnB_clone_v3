@@ -8,7 +8,7 @@ import os
 
 
 env.username = "ubuntu"
-env.hosts = ["100.26.235.45", "100.25.222.11"]
+env.hosts = ["54.87.210.50", "54.82.137.30"]
 
 
 def do_deploy(archive_path):
