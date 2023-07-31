@@ -1,30 +1,48 @@
 #!/usr/bin/python3
 """
-    This script starts a Flask web application
+    Sript that starts a Flask web application
 """
-
 from flask import Flask, render_template
 from models import storage
-
-
+import os
 app = Flask(__name__)
 
 
-@app.route('/states', strict_slashes=False)
-@app.route('/states/<state_id>', strict_slashes=False)
-def states(state_id=None):
-    """Returns HTML page that displays list of City objects linked to State"""
-    states = storage.all("State")
-    if state_id is not None:
-        state_id = 'State.' + state_id
-    return render_template('9-states.html', states=states, state_id=state_id)
-
-
 @app.teardown_appcontext
-def teardown(exc):
-    """Removes current SQLAlchemy session"""
+def handle_teardown(self):
+    """
+        method to handle teardown
+    """
     storage.close()
 
 
-if __name__ == "__main__":
+@app.route('/states', strict_slashes=False)
+def state_list():
+    """
+        method to render states
+    """
+    states = storage.all('State').values()
+    return render_template(
+        "9-states.html",
+        states=states,
+        condition="states_list")
+
+
+@app.route('/states/<id>', strict_slashes=False)
+def states_id(id):
+    """
+        method to render state ids
+    """
+    state_all = storage.all('State')
+    try:
+        state_id = state_all[id]
+        return render_template(
+            '9-states.html',
+            state_id=state_id,
+            condition="state_id")
+    except:
+        return render_template('9-states.html', condition="not_found")
+
+
+if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
